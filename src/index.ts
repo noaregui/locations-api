@@ -55,11 +55,10 @@ app.get('/cities', (req, res) => {
             ? locations.map(location => location.city)
             : [];
         const uniqueCities = [...new Set(cities)];
-        !locations?.length
-            ? res.status(500).json({ error: 'Error interno del servidor: Los datos de ubicaciones no están disponibles' })
-            : !uniqueCities.length
-            ? res.status(404).json({ error: 'No se han encontrado ciudades' })
-            : res.json(uniqueCities);
+        
+        return uniqueCities.length
+            ? res.json(uniqueCities)
+            : res.status(404).json({ error: 'No se han encontrado ciudades' });
   } catch (error: unknown) {
     console.error('Ocurrió un error:', error);
     res.status(500).json({ error: error instanceof Error ? 'Error interno del servidor' : 'Error desconocido' });
