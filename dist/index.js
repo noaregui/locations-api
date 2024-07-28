@@ -46,11 +46,9 @@ app.get('/cities', (req, res) => {
             ? locations_1.locations.map(location => location.city)
             : [];
         const uniqueCities = [...new Set(cities)];
-        !(locations_1.locations === null || locations_1.locations === void 0 ? void 0 : locations_1.locations.length)
-            ? res.status(500).json({ error: 'Error interno del servidor: Los datos de ubicaciones no están disponibles' })
-            : !uniqueCities.length
-                ? res.status(404).json({ error: 'No se han encontrado ciudades' })
-                : res.json(uniqueCities);
+        return uniqueCities.length
+            ? res.json(uniqueCities)
+            : res.status(404).json({ error: 'No se han encontrado ciudades' });
     }
     catch (error) {
         console.error('Ocurrió un error:', error);
@@ -93,13 +91,12 @@ app.get('/:city/districts', (req, res) => {
 });
 app.get('/:city', (req, res) => {
     try {
-        const city = req.params.city;
-        const normalizedCity = city ? normalize(city) : null;
-        return !normalizedCity
+        const city = normalize(req.params.city);
+        !city
             ? res.status(400).json({ error: 'El parámetro "city" es requerido' })
             : (() => {
                 const units = locations_1.locations
-                    .filter(location => normalize(location.city) === normalizedCity)
+                    .filter(location => normalize(location.city) === city)
                     .reduce((acc, location) => acc + location.units, 0);
                 return units > 0
                     ? res.json({ city, units })
@@ -115,7 +112,7 @@ app.get('/:city', (req, res) => {
 });
 app.get('/district/:district', (req, res) => {
     try {
-        const district = req.params.district ? normalize(req.params.district) : null;
+        const district = normalize(req.params.district);
         !district
             ? res.status(400).json({ error: 'El parámetro "district" es requerido' })
             : (() => {
@@ -123,8 +120,8 @@ app.get('/district/:district', (req, res) => {
                     .filter(location => normalize(location.district) === district)
                     .reduce((acc, location) => acc + location.units, 0);
                 return units > 0
-                    ? res.json({ district: req.params.district, units })
-                    : res.status(404).json({ error: `No se han encontrado unidades para el distrito: ${req.params.district}` });
+                    ? res.json({ district, units })
+                    : res.status(404).json({ error: `No se han encontrado unidades para el distrito: ${district}` });
             })();
     }
     catch (error) {
@@ -137,42 +134,42 @@ app.get('/district/:district', (req, res) => {
 app.get('/search/:query', (req, res) => {
     try {
         const query = normalize(req.params.query);
-        if (!query) {
-            return res.status(400).json({ error: 'El parámetro de búsqueda no puede estar vacío' });
-        }
-        // Buscar la ubicación que coincida con la ciudad o el distrito
-        const bestMatch = locations_1.locations
-            .map(loc => (Object.assign(Object.assign({}, loc), { cityDistance: levenshteinDistance(normalize(loc.city), query), districtDistance: levenshteinDistance(normalize(loc.district), query) })))
-            .reduce((bestMatch, loc) => {
-            const cityRate = 1 - (loc.cityDistance / Math.max(normalize(loc.city).length, query.length));
-            const districtRate = 1 - (loc.districtDistance / Math.max(normalize(loc.district).length, query.length));
-            if (cityRate > bestMatch.rate || districtRate > bestMatch.rate) {
-                return {
-                    rate: Math.max(cityRate, districtRate),
-                    type: cityRate > districtRate ? 'CITY' : 'DISTRICT',
-                    city: cityRate > districtRate ? loc.city : null,
-                    name: cityRate > districtRate ? loc.city : loc.district
-                };
-            }
-            return bestMatch;
-        }, { rate: 0, type: null, city: null, name: null });
-        // Responder con el resultado de la búsqueda
-        return bestMatch.rate > 0
-            ? res.json({
-                found: true,
-                rate: bestMatch.rate,
-                city: bestMatch.city,
-                name: bestMatch.name,
-                type: bestMatch.type
-            })
-            : res.status(404).json({
-                found: false,
-                rate: null,
-                city: null,
-                name: null,
-                type: null,
-                error: `No se encontraron resultados para: ${req.params.query}`
-            });
+        return !query
+            ? res.status(400).json({ error: 'El parámetro de búsqueda no puede estar vacío' })
+            : (() => {
+                // Buscar la ubicación que coincida con la ciudad o el distrito
+                const bestMatch = locations_1.locations
+                    .map(loc => (Object.assign(Object.assign({}, loc), { cityDistance: levenshteinDistance(normalize(loc.city), query), districtDistance: levenshteinDistance(normalize(loc.district), query) })))
+                    .reduce((bestMatch, loc) => {
+                    const cityRate = 1 - (loc.cityDistance / Math.max(normalize(loc.city).length, query.length));
+                    const districtRate = 1 - (loc.districtDistance / Math.max(normalize(loc.district).length, query.length));
+                    return (cityRate > bestMatch.rate || districtRate > bestMatch.rate)
+                        ? {
+                            rate: Math.max(cityRate, districtRate),
+                            type: cityRate > districtRate ? 'CITY' : 'DISTRICT',
+                            city: cityRate > districtRate ? loc.city : null,
+                            name: cityRate > districtRate ? loc.city : loc.district
+                        }
+                        : bestMatch;
+                }, { rate: 0, type: null, city: null, name: null });
+                // Responder con el resultado de la búsqueda
+                return bestMatch.rate > 0
+                    ? res.json({
+                        found: true,
+                        rate: bestMatch.rate,
+                        city: bestMatch.city,
+                        name: bestMatch.name,
+                        type: bestMatch.type
+                    })
+                    : res.status(404).json({
+                        found: false,
+                        rate: null,
+                        city: null,
+                        name: null,
+                        type: null,
+                        error: `No se encontraron resultados para: ${req.params.query}`
+                    });
+            })();
     }
     catch (error) {
         console.error('Ocurrió un error:', error);

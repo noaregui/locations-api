@@ -104,14 +104,13 @@ app.get('/:city/districts', (req, res) => {
   
 app.get('/:city', (req, res) => {
     try {
-      const city = req.params.city;
-      const normalizedCity = city ? normalize(city) : null;
+      const city = normalize(req.params.city);
   
-      return !normalizedCity
+      !city
         ? res.status(400).json({ error: 'El parámetro "city" es requerido' })
         : (() => {
             const units = locations
-              .filter(location => normalize(location.city) === normalizedCity)
+              .filter(location => normalize(location.city) === city)
               .reduce((acc, location) => acc + location.units, 0);
   
             return units > 0
@@ -128,7 +127,7 @@ app.get('/:city', (req, res) => {
   
 app.get('/district/:district', (req, res) => {
     try {
-      const district = req.params.district ? normalize(req.params.district) : null;
+      const district = normalize(req.params.district);
   
       !district
         ? res.status(400).json({ error: 'El parámetro "district" es requerido' })
@@ -138,8 +137,8 @@ app.get('/district/:district', (req, res) => {
               .reduce((acc, location) => acc + location.units, 0);
   
             return units > 0
-              ? res.json({ district: req.params.district, units })
-              : res.status(404).json({ error: `No se han encontrado unidades para el distrito: ${req.params.district}` });
+              ? res.json({ district, units })
+              : res.status(404).json({ error: `No se han encontrado unidades para el distrito: ${district}` });
           })();
     } catch (error: unknown) {
       console.error('Ocurrió un error:', error);
@@ -149,60 +148,74 @@ app.get('/district/:district', (req, res) => {
     }
   });
   
-app.get('/search/:query', (req, res) => {
+  app.get('/search/:query', (req, res) => {
     try {
       const query = normalize(req.params.query);
-      
-      if (!query) {
-        return res.status(400).json({ error: 'El parámetro de búsqueda no puede estar vacío' });
-      }
   
-      // Buscar la ubicación que coincida con la ciudad o el distrito
-      const bestMatch = locations
-        .map(loc => ({
-          ...loc,
-          cityDistance: levenshteinDistance(normalize(loc.city), query),
-          districtDistance: levenshteinDistance(normalize(loc.district), query)
-        }))
-        .reduce<SearchResult>((bestMatch, loc) => {
-          const cityRate = 1 - (loc.cityDistance / Math.max(normalize(loc.city).length, query.length));
-          const districtRate = 1 - (loc.districtDistance / Math.max(normalize(loc.district).length, query.length));
-          
-          if (cityRate > bestMatch.rate || districtRate > bestMatch.rate) {
-            return {
-              rate: Math.max(cityRate, districtRate),
-              type: cityRate > districtRate ? 'CITY' : 'DISTRICT',
-              city: cityRate > districtRate ? loc.city : null,
-              name: cityRate > districtRate ? loc.city : loc.district
-            };
-          }
-          return bestMatch;
-        }, { rate: 0, type: null, city: null, name: null });
+      return !query
+        ? res.status(400).json({ error: 'El parámetro de búsqueda no puede estar vacío' })
+        : (() => {
+            // Buscar la ubicación que coincida con la ciudad o el distrito
+            const bestMatch = locations
+              .map(loc => {
+                const cityDistance = levenshteinDistance(normalize(loc.city), query);
+                const districtDistance = levenshteinDistance(normalize(loc.district), query);
+                const cityRate = 1 - (cityDistance / Math.max(normalize(loc.city).length, query.length));
+                const districtRate = 1 - (districtDistance / Math.max(normalize(loc.district).length, query.length));
   
-      // Responder con el resultado de la búsqueda
-      return bestMatch.rate > 0
-        ? res.json({
-            found: true,
-            rate: bestMatch.rate,
-            city: bestMatch.city,
-            name: bestMatch.name,
-            type: bestMatch.type
-          })
-        : res.status(404).json({
-            found: false,
-            rate: null,
-            city: null,
-            name: null,
-            type: null,
-            error: `No se encontraron resultados para: ${req.params.query}`
-          });
+                return {
+                  city: loc.city,
+                  district: loc.district,
+                  cityRate,
+                  districtRate
+                };
+              })
+              .reduce<SearchResult>((bestMatch, match) => {
+                // Preferir coincidencias de ciudad si la tasa de coincidencia de ciudad es mayor
+                return match.cityRate > bestMatch.rate
+                  ? {
+                      rate: match.cityRate,
+                      city: match.city,
+                      name: match.city,
+                      type: 'CITY'
+                    }
+                  : match.districtRate > bestMatch.rate
+                  ? {
+                      rate: match.districtRate,
+                      city: match.city, // Aquí se asigna la ciudad correspondiente al distrito encontrado
+                      name: match.district,
+                      type: 'DISTRICT'
+                    }
+                  : bestMatch;
+              }, { rate: 0, city: null, name: null, type: null });
+  
+            // Responder con el resultado de la búsqueda
+            return bestMatch.rate > 0
+              ? res.json({
+                  found: true,
+                  rate: bestMatch.rate,
+                  city: bestMatch.city,
+                  name: bestMatch.name,
+                  type: bestMatch.type
+                })
+              : res.status(404).json({
+                  found: false,
+                  rate: null,
+                  city: null,
+                  name: null,
+                  type: null,
+                  error: `No se encontraron resultados para: ${req.params.query}`
+                });
+          })();
     } catch (error: unknown) {
       console.error('Ocurrió un error:', error);
       res.status(500).json({
         error: error instanceof Error ? `Error interno del servidor: ${error.message}` : 'Error interno del servidor'
       });
     }
-  });  
+  });
+  
+
 
 // Middleware para manejar rutas no encontradas
 app.use((req, res) => {
