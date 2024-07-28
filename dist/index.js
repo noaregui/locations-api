@@ -139,19 +139,36 @@ app.get('/search/:query', (req, res) => {
             : (() => {
                 // Buscar la ubicación que coincida con la ciudad o el distrito
                 const bestMatch = locations_1.locations
-                    .map(loc => (Object.assign(Object.assign({}, loc), { cityDistance: levenshteinDistance(normalize(loc.city), query), districtDistance: levenshteinDistance(normalize(loc.district), query) })))
-                    .reduce((bestMatch, loc) => {
-                    const cityRate = 1 - (loc.cityDistance / Math.max(normalize(loc.city).length, query.length));
-                    const districtRate = 1 - (loc.districtDistance / Math.max(normalize(loc.district).length, query.length));
-                    return (cityRate > bestMatch.rate || districtRate > bestMatch.rate)
+                    .map(loc => {
+                    const cityDistance = levenshteinDistance(normalize(loc.city), query);
+                    const districtDistance = levenshteinDistance(normalize(loc.district), query);
+                    const cityRate = 1 - (cityDistance / Math.max(normalize(loc.city).length, query.length));
+                    const districtRate = 1 - (districtDistance / Math.max(normalize(loc.district).length, query.length));
+                    return {
+                        city: loc.city,
+                        district: loc.district,
+                        cityRate,
+                        districtRate
+                    };
+                })
+                    .reduce((bestMatch, match) => {
+                    // Preferir coincidencias de ciudad si la tasa de coincidencia de ciudad es mayor
+                    return match.cityRate > bestMatch.rate
                         ? {
-                            rate: Math.max(cityRate, districtRate),
-                            type: cityRate > districtRate ? 'CITY' : 'DISTRICT',
-                            city: cityRate > districtRate ? loc.city : null,
-                            name: cityRate > districtRate ? loc.city : loc.district
+                            rate: match.cityRate,
+                            city: match.city,
+                            name: match.city,
+                            type: 'CITY'
                         }
-                        : bestMatch;
-                }, { rate: 0, type: null, city: null, name: null });
+                        : match.districtRate > bestMatch.rate
+                            ? {
+                                rate: match.districtRate,
+                                city: match.city, // Aquí se asigna la ciudad correspondiente al distrito encontrado
+                                name: match.district,
+                                type: 'DISTRICT'
+                            }
+                            : bestMatch;
+                }, { rate: 0, city: null, name: null, type: null });
                 // Responder con el resultado de la búsqueda
                 return bestMatch.rate > 0
                     ? res.json({
