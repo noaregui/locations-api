@@ -7,17 +7,20 @@ const port = 3000;
 const normalize = (text: string) => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const levenshteinDistance = (cadena1: string, cadena2: string): number => {
-    const longitudCadena1 = cadena1.length;
-    const longitudCadena2 = cadena2.length;
-    const dp: number[][] = Array.from({ length: longitudCadena1 + 1 }, () => Array(longitudCadena2 + 1).fill(0));
-    
-    // Inicializa la primera columna de la matriz dp con el costo de eliminar caracteres
-    for (let fila = 0; fila <= longitudCadena1; fila++) dp[fila][0] = fila;
-    // Inicializa la primera fila de la matriz dp con el costo de insertar caracteres
-    for (let columna = 0; columna <= longitudCadena2; columna++) dp[0][columna] = columna;
+  const longitudCadena1 = cadena1.length;
+  const longitudCadena2 = cadena2.length;
   
-    for (let fila = 1; fila <= longitudCadena1; fila++) {
-      for (let columna = 1; columna <= longitudCadena2; columna++) {
+  // Inicialización de la matriz dp
+  const dp = Array.from({ length: longitudCadena1 + 1 }, (_, fila) =>
+    Array.from({ length: longitudCadena2 + 1 }, (_, columna) =>
+      fila === 0 ? columna : (columna === 0 ? fila : 0)
+    )
+  );
+  
+  // Rellenar la matriz dp con el cálculo de distancias
+  Array.from({ length: longitudCadena1 + 1 }, (_, fila) =>
+    Array.from({ length: longitudCadena2 + 1 }, (_, columna) => {
+      if (fila > 0 && columna > 0) {
         const cost = cadena1[fila - 1] === cadena2[columna - 1] ? 0 : 1;
         dp[fila][columna] = Math.min(
           dp[fila - 1][columna] + 1, // Costo por eliminación
@@ -25,10 +28,14 @@ const levenshteinDistance = (cadena1: string, cadena2: string): number => {
           dp[fila - 1][columna - 1] + cost // Costo por sustitución
         );
       }
-    }
-    // Devuelve el costo mínimo para transformar cadena1 en cadena2
-    return dp[longitudCadena1][longitudCadena2];
-  };
+      return dp[fila][columna];
+    })
+  );
+
+  // Devuelve el costo mínimo para transformar cadena1 en cadena2
+  return dp[longitudCadena1][longitudCadena2];
+};
+
   
 // Define la estructura para el resultado de la búsqueda
 interface SearchResult {
