@@ -65,5 +65,48 @@ Ahora instalaremos los paquetes necesarios para trabajar con typescript:
 $ npm install --save-dev typescript ts-node @types/node @types/express
 ```
 
+4. Crear archivo tsconfig.json
+El archivo tsconfig.json es una parte fundamental de cualquier proyecto TypeScript. Define la configuración para el compilador TypeScript (tsc) y permite controlar cómo se debe compilar el código TypeScript.
+<div align="center">
+	<img width="400" alt="image" src="https://github.com/user-attachments/assets/5f8fdd85-46d3-46ed-96ef-f4affa9b5053" />
+</div>
 
-<p>Tendremos un archivo base llamado locations.ts que tendrá un array de objetos donde tendremos un listado de diferentes datos de ciudades, distritos y número de pisos alquilados.</p>
+### Ⓜ️ Makefile
+Por último, tendremos que crear un archivo 📄 **Makefile**. Un Makefile es un archivo de configuración que define un conjunto de reglas para automatizar tareas en proyectos de software. En el contexto de Node.js y TypeScript, se usa para simplificar la instalación, compilación y ejecución de aplicaciones. La estructura que sigue el Makefile que he creado es la siguiente:
+<div align="center">
+	<img width="400" alt="image" src="https://github.com/user-attachments/assets/a2eca418-565a-40f3-8523-4d0cd3456225" />
+</div>
+
+Una vez tengamos el archivo Makefile creado utilizaremos los siguientes comandos:
+
+5. Instalación de dependencias y configuración inicial
+   
+Este comando generalmente se utiliza para instalar todas las dependencias necesarias para el proyecto. Esto puede incluir la instalación de paquetes, bibliotecas y herramientas necesarias para que el proyecto funcione correctamente.
+
+```
+$ make install
+```
+
+6. Configuración del entorno de desarrollo
+   
+Este comando generalmente configura el entorno de desarrollo para que puedas trabajar en el proyecto de manera eficiente. Puede iniciar servidores de desarrollo, herramientas de vigilancia de cambios, o cualquier otro servicio necesario durante el desarrollo.
+
+```
+$ make dev
+```
+
+7. Inicia la aplicación
+   
+Este comando suele usarse para iniciar la aplicación en un entorno de producción o en un estado de ejecución normal. A menudo configura la aplicación para que esté lista para recibir tráfico o solicitudes de usuarios.
+
+```
+$ make start
+```
+
+⚠️ En este caso tendremos un archivo base de ejemplo llamado locations.ts que tendrá un array de objetos donde tendremos un listado de diferentes datos de ciudades, distritos y número de pisos alquilados.
+
+<div align="center">
+	<h2>Ahora sí...</h2>
+	<p>Te recomiendo que mires los diferentes archivos y vayas creando tu propia API para ir practicando su funcionamiento 👍🏽</p>
+	<img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3B0eHFpZG50aDdmcXU2dXp6ejlxNjZvaTNvOW1sMWs1bGkzZ3RvMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/25UxpWoNBu8nOtURm9/giphy.webp"></img>
+</div>
