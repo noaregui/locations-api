@@ -22,7 +22,7 @@ Ejemplos de APIs:
 Las APIs son esenciales porque permiten a los desarrolladores construir aplicaciones más ricas y funcionales sin tener que construir todo desde cero.</p>
 
 ## 👩🏽‍💻Instalación
-<p>Empecemos viendo las instalaciones que tenemos que hacer para poder utilzar Node.js, Express y TypeScript.</p>
+<p>Empecemos viendo las instalaciones que tenemos que hacer para poder utilzar Node.js, Express y TypeScript. A menudo, cuando seguimos tutoriales, simplemente copiamos y pegamos comandos sin realmente entender qué hacen o por qué los estamos usando. ¡Pero hoy cambiaremos eso!</p>
 <div align="center">
 	<img src="https://media4.giphy.com/media/h3u7w8BR07IHDsnzQw/200.webp?cid=ecf05e47nt0kec0kmyt0mvi6a5gc80vhdzpopye2rls5vog0&ep=v1_gifs_search&rid=200.webp&ct=g"></img>
 </div>
